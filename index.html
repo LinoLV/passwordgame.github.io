@@ -46,13 +46,20 @@
     }
     input::placeholder { color: #aaa; }
     #char_count { text-align: left; margin-bottom: 10px; }
+    
     #label_message {
         white-space: pre-wrap;
         line-height: 1.6;
         opacity: 0;
         transform: translateY(-20px);
-        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
+
+    @keyframes slideInBounce {
+        0% { opacity: 0; transform: translateY(-20px); }
+        60% { opacity: 1; transform: translateY(5px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
     .red { color: #FF0000; }
     .green { color: #00FF00; }
     #winScreen {
@@ -72,7 +79,6 @@
         opacity: 0;
         transition: opacity 1.2s;
     }
-    .show { opacity: 1 !important; transform: translateY(0) !important; }
 </style>
 </head>
 <body>
@@ -118,11 +124,17 @@ function has_total_25(p) {
     return p.split('').filter(c => /\d/.test(c)).reduce((sum, c) => sum + parseInt(c), 0) === 25;
 }
 
+function animateRules() {
+    labelMessage.style.animation = 'none';
+    labelMessage.offsetHeight; 
+    labelMessage.style.animation = 'slideInBounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards';
+}
+
 function check_password(paswd) {
     charCount.textContent = `Characters: ${paswd.length}`;
     if (!paswd) {
         labelMessage.textContent = "";
-        labelMessage.classList.remove('show');
+        labelMessage.style.animation = 'none';
         lastRulesText = "";
         return;
     }
@@ -146,28 +158,28 @@ function check_password(paswd) {
     rules.push(["Password must contain a number name between 1-10", p => nos.some(n => p.toLowerCase().includes(n))]);
 
     if (rules.length == 6 && rules[rules.length-1][1](paswd))
-    rules.push(["Password must contain '#'", p => p.includes('#')]);
+    rules.push(["Password must contain a hashtag", p => p.includes('#')]);
 
     if (rules.length == 7 && rules[rules.length-1][1](paswd))
     rules.push(["Password must contain '@'", p => p.includes('@')]);
 
     if (rules.length == 8 && rules[rules.length-1][1](paswd))
-    rules.push(["Password must contain '&'", p => p.includes('&')]);
+    rules.push(["Password must contain the 'and' symbol", p => p.includes('&')]);
 
     if (rules.length == 9 && rules[rules.length-1][1](paswd))
     rules.push(["The digits in the password must add up to 25", p => has_total_25(p)]);
 
     if (rules.length == 10 && rules[rules.length-1][1](paswd))
-    rules.push(["Password must contain '!'", p => p.includes('!')]);
+    rules.push(["Password must contain an exclamation mark", p => p.includes('!')]);
 
     if (rules.length == 11 && rules[rules.length-1][1](paswd))
-    rules.push(["Password must contain '*'", p => p.includes('*')]);
+    rules.push(["Password must contain the star symbol", p => p.includes('*')]);
 
     if (rules.length == 12 && rules[rules.length-1][1](paswd))
-    rules.push(["Password must contain '%'", p => p.includes('%')]);
+    rules.push(["Password must contain the percentage symbol", p => p.includes('%')]);
 
     if (rules.length == 13 && rules[rules.length-1][1](paswd))
-    rules.push(["Password must contain '?'", p => p.includes('?')]);
+    rules.push(["Password must contain a question mark", p => p.includes('?')]);
 
     if (rules.length == 14 && rules[rules.length-1][1](paswd))
     rules.push(["Password must not contain a common pattern", p => !common_patterns.some(x => p.toLowerCase().includes(x))]);
@@ -216,15 +228,15 @@ function check_password(paswd) {
     }
 
     labelMessage.innerHTML = new_text;
-    labelMessage.classList.add('show');
+    animateRules(); 
     lastRulesText = new_text;
 }
 
 function show_win_screen() {
     gameScreen.style.display = 'none';
     winScreen.style.display = 'block';
-    setTimeout(() => winTitle.classList.add('show'), 100);
-    setTimeout(() => winSub.classList.add('show'), 300);
+    setTimeout(() => winTitle.style.opacity = 1, 100);
+    setTimeout(() => winSub.style.opacity = 1, 300);
 }
 
 passwordField.addEventListener('input', (e) => {
