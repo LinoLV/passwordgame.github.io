@@ -1,2 +1,2 @@
 # passwordgame.github.io
-Web version lf my password game. (Under development)
+Web version of my password game. (Under development)
