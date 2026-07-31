@@ -1,2 +1,3 @@
-# passwordgame.github.io
-Web version of my password game. (Under development)
+# PasswordGameWeb
+Web version of my password game. 
+Check it out here: https://linolv.github.io/passwordgameweb/
