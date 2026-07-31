@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lino's Password Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@700&display=swap" rel="stylesheet">
+<style>
+    * { box-sizing: border-box; font-family: 'Noto Sans', sans-serif; }
+    body {
+        margin: 0;
+        background: #121212;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        padding: 20px;
+    }
+    #app {
+        width: 100%;
+        max-width: 600px;
+        background: #1e1e1e;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0,255,0,0.1);
+    }
+    h1 {
+        color: #00FF00;
+        text-align: center;
+        margin: 0 0 20px 0;
+        font-size: 2em;
+    }
+    input {
+        width: 90%;
+        display: block;
+        margin: 0 auto 20px auto;
+        padding: 12px;
+        font-size: 16px;
+        background: #000;
+        border: 2px solid #444;
+        color: #fff;
+        border-radius: 8px;
+        outline: none;
+        caret-color: #CCFF00;
+    }
+    input::placeholder { color: #aaa; }
+    #char_count { text-align: left; margin-bottom: 10px; }
+    #label_message {
+        white-space: pre-wrap;
+        line-height: 1.6;
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    .red { color: #FF0000; }
+    .green { color: #00FF00; }
+    #winScreen {
+        display: none;
+        text-align: center;
+        padding-top: 60px;
+    }
+    #winTitle {
+        font-size: 3em;
+        color: #00FF00;
+        opacity: 0;
+        transition: opacity 1s;
+    }
+    #winSub {
+        font-size: 1.2em;
+        color: #00FFFF;
+        opacity: 0;
+        transition: opacity 1.2s;
+    }
+    .show { opacity: 1 !important; transform: translateY(0) !important; }
+</style>
+</head>
+<body>
+<div id="app">
+    <div id="gameScreen">
+        <h1><br>Lino's Password Game</h1>
+        <input type="text" id="password_field" placeholder="Start typing your password" autocomplete="off">
+        <div id="char_count">Characters: 0</div>
+        <div id="label_message"></div>
+    </div>
+
+    <div id="winScreen">
+        <div id="winTitle">YOU WON!</div>
+        <div id="winSub">Thanks for Playing Lino's Password Game</div>
+    </div>
+</div>
+
+<audio id="errorSound" src="error.mp3" preload="auto"></audio>
+<audio id="completeSound" src="complete.mp3" preload="auto"></audio>
+
+<script>
+const common_patterns = ["1234", "qwerty", "11111", "123", "abc123", "0000", "password",
+    "7777", "999", "qwertyuiop", "444", "333", "8888", "6666",
+    "789", "4567", "3456"];
+const months = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+const nos = ["one","two","three","four","five","six","seven","eight","nine","ten"];
+const colors = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "black", "white", "brown", "gray", "grey"];
+
+const passwordField = document.getElementById('password_field');
+const charCount = document.getElementById('char_count');
+const labelMessage = document.getElementById('label_message');
+const gameScreen = document.getElementById('gameScreen');
+const winScreen = document.getElementById('winScreen');
+const winTitle = document.getElementById('winTitle');
+const winSub = document.getElementById('winSub');
+const errorSound = document.getElementById('errorSound');
+const completeSound = document.getElementById('completeSound');
+
+let typingTimeout;
+let lastRulesText = "";
+
+function has_total_25(p) {
+    return p.split('').filter(c => /\d/.test(c)).reduce((sum, c) => sum + parseInt(c), 0) === 25;
+}
+
+function check_password(paswd) {
+    charCount.textContent = `Characters: ${paswd.length}`;
+    if (!paswd) {
+        labelMessage.textContent = "";
+        labelMessage.classList.remove('show');
+        lastRulesText = "";
+        return;
+    }
+
+    let rules = [];
+
+    rules.push(["Password must contain a lowercase letter", p => /[a-z]/.test(p)]);
+    if (rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain an uppercase letter", p => /[A-Z]/.test(p)]);
+
+    if (rules.length == 2 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain at least 7 characters", p => p.length >= 7]);
+
+    if (rules.length == 3 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain a number", p => /\d/.test(p)]);
+
+    if (rules.length == 4 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain the name of a month", p => months.some(m => p.toLowerCase().includes(m))]);
+
+    if (rules.length == 5 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain a number name between 1-10", p => nos.some(n => p.toLowerCase().includes(n))]);
+
+    if (rules.length == 6 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain '#'", p => p.includes('#')]);
+
+    if (rules.length == 7 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain '@'", p => p.includes('@')]);
+
+    if (rules.length == 8 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain '&'", p => p.includes('&')]);
+
+    if (rules.length == 9 && rules[rules.length-1][1](paswd))
+    rules.push(["The digits in the password must add up to 25", p => has_total_25(p)]);
+
+    if (rules.length == 10 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain '!'", p => p.includes('!')]);
+
+    if (rules.length == 11 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain '*'", p => p.includes('*')]);
+
+    if (rules.length == 12 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain '%'", p => p.includes('%')]);
+
+    if (rules.length == 13 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain '?'", p => p.includes('?')]);
+
+    if (rules.length == 14 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must not contain a common pattern", p => !common_patterns.some(x => p.toLowerCase().includes(x))]);
+
+    if (rules.length == 15 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must not contain spaces", p => !p.includes(' ')]);
+
+    if (rules.length == 16 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain a Roman numeral (I, V, X, L, C, D or M)", p => /[IVXLCDM]/i.test(p)]);
+
+    if (rules.length == 17 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain a color name", p => colors.some(c => p.toLowerCase().includes(c))]);
+
+    if (rules.length == 18 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain both an even and an odd digit", p => /[02468]/.test(p) && /[13579]/.test(p)]);
+
+    if (rules.length == 19 && rules[rules.length-1][1](paswd))
+    rules.push(["Password length must be a multiple of 3", p => p.length % 3 === 0]);
+
+    let red_rules = [];
+    let green_rules = [];
+    let all_green = true;
+
+    rules.forEach(([msg, check], i) => {
+        if (check(paswd)) {
+            green_rules.push(`<span class="green">Rule ${i+1}: ${msg}</span>`);
+        } else {
+            red_rules.push(`<span class="red">Rule ${i+1}: ${msg}</span>`);
+            all_green = false;
+        }
+    });
+
+    let new_text = [...red_rules, ...green_rules].join('<br><br>');
+
+    if (new_text !== lastRulesText) {
+        if (!all_green) {
+            errorSound.currentTime = 0;
+            errorSound.play().catch(()=>{});
+        } else {
+            completeSound.currentTime = 0;
+            completeSound.play().catch(()=>{});
+            if (rules.length === 20) {
+                setTimeout(show_win_screen, 1000);
+            }
+        }
+    }
+
+    labelMessage.innerHTML = new_text;
+    labelMessage.classList.add('show');
+    lastRulesText = new_text;
+}
+
+function show_win_screen() {
+    gameScreen.style.display = 'none';
+    winScreen.style.display = 'block';
+    setTimeout(() => winTitle.classList.add('show'), 100);
+    setTimeout(() => winSub.classList.add('show'), 300);
+}
+
+passwordField.addEventListener('input', (e) => {
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => check_password(e.target.value), 400);
+});
+</script>
+</body>
+</html>
