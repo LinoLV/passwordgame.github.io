@@ -133,7 +133,7 @@ const common_patterns = ["1234", "qwerty", "11111", "123", "abc123", "0000", "pa
 const months = ["january","february","march","april","may","june","july","august","september","october","november","december"];
 const nos = ["one","two","three","four","five","six","seven","eight","nine","ten"];
 const colors = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "black", "white", "brown", "gray", "grey"];
-
+const hexRegex = /#[0-9A-Fa-f]{6}/;
 const passwordField = document.getElementById('password_field');
 const charCount = document.getElementById('char_count');
 const labelMessage = document.getElementById('label_message');
@@ -224,6 +224,9 @@ function check_password(paswd) {
     rules.push(["Password must contain both an even and an odd digit", p => /[02468]/.test(p) && /[13579]/.test(p)]);
 
     if (rules.length == 19 && rules[rules.length-1][1](paswd))
+    rules.push(["Password must contain a valid hex color code", p => hexRegex.test(p)]);
+
+    if (rules.length == 20 && rules[rules.length-1][1](paswd))
     rules.push(["Password length must be a multiple of 3", p => p.length % 3 === 0]);
 
     let red_rules = [];
@@ -248,7 +251,7 @@ function check_password(paswd) {
         } else {
             completeSound.currentTime = 0;
             completeSound.play().catch(()=>{});
-            if (rules.length === 20) {
+            if (rules.length === 21) {
                 setTimeout(show_win_screen, 1000);
             }
         }
